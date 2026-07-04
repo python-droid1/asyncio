@@ -88,3 +88,52 @@ async def main():
     )
 
 asyncio.run(main())
+
+
+# ===============================
+# Semaphore, timeout, erro handling 
+# ===============================
+
+
+import asyncio
+import aiohttp
+
+async def fetch_url(session, url, semaphore):
+    # The semaphore ensures only 2 requests hit the network at the exact same time
+    async with semaphore:
+        try:
+            print(f"Fetcher: Requesting {url}...")
+            
+            # Set a strict 2-second timeout for the network request
+            async with asyncio.wait_for(session.get(url), timeout=2.0) as response:
+                data = await response.text()
+                print(f"Fetcher: Successfully retrieved {url} ({len(data)} bytes)")
+                return data
+                
+        except asyncio.TimeoutError:
+            print(f"Error: {url} timed out after 2 seconds!")
+            return None
+        except aiohttp.ClientError as e:
+            print(f"Error: Network issue connecting to {url}: {e}")
+            return None
+
+async def main():
+    urls = [
+        "https://www.google.com",
+        "https://www.httpbin.org/delay/5",  # This will trigger our timeout error
+        "https://this-is-a-broken-url.xyz", # This will trigger a network connection error
+        "https://www.python.org"
+    ]
+    
+    # Limit to a maximum of 2 concurrent connections
+    sem = asyncio.Semaphore(2)
+    
+    async with aiohttp.ClientSession() as session:
+        # Bundle all tasks together using a list comprehension
+        tasks = [fetch_url(session, url, sem) for url in urls]
+        
+        print("Main: Starting concurrent requests...")
+        results = await asyncio.gather(*tasks)
+        print("Main: All tasks finished processing.")
+
+asyncio.run(main())
