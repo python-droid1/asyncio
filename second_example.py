@@ -20,3 +20,43 @@ async def main():
     )
 
 asyncio.run(main())
+
+
+# ===============================
+# Section 
+# ===============================
+
+
+import asyncio
+
+async def check_stock():
+    print("Store: Checking inventory...")
+    await asyncio.sleep(1.5)  # Simulating database lookup
+    print("Store: Item is in stock!")
+    return True
+
+async def process_payment():
+    print("Payment: Contacting bank...")
+    await asyncio.sleep(2.0)  # Simulating credit card processing
+    print("Payment: Charge approved!")
+    return True
+
+async def main():
+    print("--- Checkout Started ---")
+    
+    # gather runs both concurrently and waits for all results
+    results = await asyncio.gather(
+        check_stock(),
+        process_payment()
+    )
+    
+    # results contains [stock_status, payment_status]
+    in_stock = results[0]
+    payment_success = results[1]
+    
+    if in_stock and payment_success:
+        print("Server: Both tasks passed! Order Shipped!")
+    else:
+        print("Server: Order failed.")
+
+asyncio.run(main())
