@@ -60,3 +60,31 @@ async def main():
         print("Server: Order failed.")
 
 asyncio.run(main())
+
+
+# ===============================
+# Semaphores 
+# ===============================
+
+import asyncio
+
+async def access_resource(task_id, semaphore):
+    # async with automatically acquires and releases the semaphore key
+    async with semaphore:
+        print(f"Task {task_id}: Entered the resource.")
+        await asyncio.sleep(2)
+        print(f"Task {task_id}: Leaving the resource.")
+
+async def main():
+    # Allow a maximum of 2 tasks at the same time
+    sem = asyncio.Semaphore(2)
+    
+    # Launch 4 tasks concurrently
+    await asyncio.gather(
+        access_resource(1, sem),
+        access_resource(2, sem),
+        access_resource(3, sem),
+        access_resource(4, sem)
+    )
+
+asyncio.run(main())
